@@ -1,16 +1,56 @@
-<script>
-  var remark_config = {
-    host: 'https://remark42.example.com',
-    site_id: 'my_site',
-    components: ['embed', 'last-comments']
-    max_shown_comments: 100,
-    theme: 'dark',
-    page_title: 'My custom title for a page',
-    locale: 'es',
-    show_email_subscription: false,
-    simple_view: true,
-    no_footer: false
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Webpage</title>
+</head>
+<body>
+    <h1>Hello World!</h1>
+    <p>This is my webpage.</p>
+
+    <!-- Language selector -->
+<select id="language-select">
+  <option value="en">English</option>
+  <option value="es">Español</option>
+</select>
+
+    <!-- JavaScript to redirect to the selected language -->
+ <script>
+  // Load the appropriate language file based on the user's selection
+  var languageSelect = document.getElementById('language-select');
+  var language = languageSelect.value;
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', language + '.json', true);
+  xhr.onload = function() {
+    if (xhr.status === 200) {
+      // Parse the JSON file and store the translations in a global variable
+      window.translations = JSON.parse(xhr.responseText);
+      // Call a function to update the UI with the new translations
+      updateUI();
+    }
+  };
+  xhr.send();
+
+  // Function to update the UI with the current language's translations
+  function updateUI() {
+    document.getElementById('welcome-message').textContent = window.translations['welcome'];
+    document.getElementById('about-link').textContent = window.translations['about'];
+    document.getElementById('contact-link').textContent = window.translations['contact'];
   }
+
+  // Add an event listener to the language select dropdown to update the UI when the user changes the language
+  languageSelect.addEventListener('change', function() {
+    language = languageSelect.value;
+    xhr.open('GET', language + '.json', true);
+    xhr.send();
+  });
 </script>
-<script>!function(e,n){for(var o=0;o<e.length;o++){var r=n.createElement("script"),c=".js",d=n.head||n.body;"noModule"in r?(r.type="module",c=".mjs"):r.async=!0,r.defer=!0,r.src=remark_config.host+"/web/"+e[o]+c,d.appendChild(r)}}(remark_config.components||["embed"],document);</script>
-<div id="remark42"></div>
+
+<h1 id="welcome-message">Welcome to my website!</h1>
+<nav>
+  <ul>
+    <li><a href="#about" id="about-link">About</a></li>
+    <li><a href="#contact" id="contact-link">Contact</a></li>
+  </ul>
+</nav>
+</body>
+</html>
