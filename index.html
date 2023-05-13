@@ -1,12 +1,71 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <title>Page View Counter</title>
-</head>
-<body>
-    <h1>Welcome to my website!</h1>
-    <p>This page has been viewed <span id="counter">0</span> times.</p>
+    <head>
+        <title>Watch Movie</title>
+        <script src="https://cdn.jsdelivr.net/npm/@wasi-master/wasi%22%3E</script>
+        <script src="https://cdn.jsdelivr.net/npm/@wasi-master/wasmfs%22%3E</script>
+        <script>
+            window.WASMFS = new WASI({
+                preopens: {
+                    '/workingdir': '.'
+                }
+            });
+            function loadWasm() {
+                return WebAssembly.instantiateStreaming(
+                    fetch("viewmovie.wasm"),
+                    window.WASMFS.getImports()
+                )
+            }
 
-    <script src="counter.js"></script>
-</body>
+            async function start() {
+                await WASMFS.mount();
+                const wasm = await loadWasm();
+
+                document.querySelector("#playBtn").addEventListener("click", e => {
+                    wasm.instance.exports.playVideo();
+                });
+
+                document.querySelector("#pauseBtn").addEventListener("click", e => {
+                    wasm.instance.exports.pauseVideo();
+                });
+
+                document.querySelector("#seekBar").oninput = function() {
+                    var seekTime = this.value * wasm.instance.exports.getDuration() / 100;
+                    wasm.instance.exports.setCurrentTime(seekTime);
+                };
+
+                var ws = new WebSocket("wss://your-server-url.com");
+                ws.onmessage = function(event) {
+                    var data = JSON.parse(event.data);
+                    if (data.type === "play") {
+                        wasm.instance.exports.playVideo();
+                    } else if (data.type === "pause") {
+                        wasm.instance.exports.pauseVideo();
+                    } else if (data.type === "seek") {
+                        wasm.instance.exports.setCurrentTime(data.currentTime);
+} else if (data.type === "message") {
+                        var chatBox = document.querySelector("#chatBox");
+                        var messageElem = document.createElement("div");
+                        messageElem.innerHTML = "<strong>" + data.user + ": </strong>" + data.message;
+                        chatBox.appendChild(messageElem);
+                        chatBox.scrollTop = chatBox.scrollHeight;
+                    }
+                };
+            }
+        </script>
+    </head>
+    <body onload="start()">
+      <video id="moviePlayer" src="https://rwstudio.nim.town/movie/comingsoon/film/coming-soon.mp4" controls>
+         Your browser does not support HTML5 video.
+      </video>
+      <br>
+      <button id="playBtn">Play</button>
+      <button id="pauseBtn">Pause</button>
+      <input type="range" id="seekBar" min="0" max="100" value="0">
+      <br>
+      <textarea id="chatInput"></textarea>
+      <button id="sendBtn">Send</button>
+      <br>
+      <div id="chatBox"></div>
+    </body>
 </html>
