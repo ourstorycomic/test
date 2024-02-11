@@ -1,131 +1,19 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>Watch Movie</title>
-        <script src="https://cdn.jsdelivr.net/npm/@wasi-master/wasi%22%3E</script>
-        <script src="https://cdn.jsdelivr.net/npm/@wasi-master/wasmfs%22%3E</script>
-        <script>
-            window.WASMFS = new WASI({
-                preopens: {
-                    '/workingdir': '.'
-                }
-            });
-            function loadWasm() {
-                return WebAssembly.instantiateStreaming(
-                    fetch("viewmovie.wasm"),
-                    window.WASMFS.getImports()
-                )
-            }
-
-            async function start() {
-                await WASMFS.mount();
-                const wasm = await loadWasm();
-
-                document.querySelector("#playBtn").addEventListener("click", e => {
-                    var roomId = document.querySelector("#roomId").value;
-                    var message = {
-                        type: "play",
-                        roomId: roomId
-                    };
-                    ws.send(JSON.stringify(message));
-                    wasm.instance.exports.playVideo();
-                });
-
-                document.querySelector("#pauseBtn").addEventListener("click", e => {
-                    var roomId = document.querySelector("#roomId").value;
-                    var message = {
-                        type: "pause",
-                        roomId: roomId
-                    };
-                    ws.send(JSON.stringify(message));
-                    wasm.instance.exports.pauseVideo();
-                });
-
-                document.querySelector("#seekBar").oninput = function() {
-                    var seekTime = this.value * wasm.instance.exports.getDuration() / 100;
-                    wasm.instance.exports.setCurrentTime
-(seekTime);
-                    var roomId = document.querySelector("#roomId").value;
-                    var message = {
-                        type: "seek",
-                        currentTime: seekTime,
-                        roomId: roomId
-                    };
-                    ws.send(JSON.stringify(message));
-                };
-
-                document.querySelector("#chatInput").addEventListener("keydown", function(event) {
-                    if (event.keyCode === 13) {
-                        var message = this.value;
-                        var roomId = document.querySelector("#roomId").value;
-                        var roomName = document.querySelector("#roomName").value;
-                        var user = document.querySelector("#userName").value;
-                        var messageObj = {
-                            type: "message",
-                            message: message,
-                            user: user,
-                            roomId: roomId,
-                            roomName: roomName
-                        };
-                        ws.send(JSON.stringify(messageObj));
-                        this.value = "";
-                    }
-                });
-            }
-
-            function createRoom() {
-                var roomName = document.querySelector("#newRoomName").value;
-                var userName = document.querySelector("#newUserName").value;
-                var roomObj = {
-                    name: roomName,
-                    user: userName
-                };
-                if (localStorage.getItem("rooms") == null) {
-                    localStorage.setItem("rooms", JSON.stringify([roomObj]));
-                } else {
-                    var rooms = JSON.parse(localStorage.getItem("rooms"));
-                    rooms.push(roomObj);
-                    localStorage.setItem("rooms", JSON.stringify(rooms));
-                }
-                window.location.href = "view-movie-private.html?roomName=" + encodeURIC
-omponent(roomName) + "&userName=" + encodeURIComponent(userName);
-                return false;
-            }
-
-            function joinRoom() {
-                var roomName = document.querySelector("#joinRoomName").value;
-                var userName = document.querySelector("#joinUserName").value;
-                if (localStorage.getItem("rooms") != null) {
-                    var rooms = JSON.parse(localStorage.getItem("rooms"));
-                    var room = rooms.find(r => r.name === roomName);
-                    if (room != null) {
-                        window.location.href = "view-movie-private.html?roomName=" + encodeURIComponent(roomName) + encodeURIComponent("&userName=" + encodeURIComponent(userName) + "&userType=guest");
-                    } else {
-                        alert("Room not found!");
-                    }
-                } else {
-                    alert("Room not found!");
-                }
-                return false;
-            }
-        </script>
-    </head>
-    <body onload="start()">
-      <div id="roomInfo">
-        <h1>Room: <span id="roomName"></span></h1>
-        <h2>User: <span id="userName"></span></h2>
-      </div>
-      <video id="moviePlayer" src="https://rwstudio.nim.town/movie/comingsoon/film/coming-soon.mp4" controls>
-         Your browser does not support HTML5 video.
-      </video>
-      <br>
-      <button id="playBtn">Play</button>
-      <button id="pauseBtn">Pause</button>
-      <input type="range" id="seekBar" min="0" max="100" value="0">
-      <br>
-      <textarea id="chatInput"></textarea>
-      <button id="sendBtn">Send</button>
-      <br>
-      <div id="chatBox"></div>
-    </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watch Together</title>
+  <script src="https://cdn.socket.io/4.3.1/socket.io.js"></script>
+</head>
+<body>
+  <div id="video-container">
+    <video id="video" controls>
+      <source src="video.mp4" type="video/mp4">
+    </video>
+  </div>
+  <button id="create-room-btn">Create Room</button>
+  <input type="text" id="invite-link" readonly>
+  <script src="script.js"></script>
+</body>
 </html>
